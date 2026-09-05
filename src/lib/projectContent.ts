@@ -1,5 +1,3 @@
-import { readFile, readdir } from "node:fs/promises";
-import path from "node:path";
 import matter from "gray-matter";
 import GithubSlugger from "github-slugger";
 import { toString } from "mdast-util-to-string";
@@ -30,15 +28,16 @@ export interface ProjectCaseStudy {
   toc: ProjectTocItem[];
 }
 
-const projectDirectory = path.join(process.cwd(), "src/content/projects");
+const projectSources = import.meta.glob("../content/projects/*.md", {
+  eager: true,
+  import: "default",
+  query: "?raw",
+}) as Record<string, string>;
 const validProjectId = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export async function getProjectIds() {
-  const files = await readdir(projectDirectory);
-
-  return files
-    .filter((file) => file.endsWith(".md"))
-    .map((file) => filenameToProjectId(file))
+  return Object.keys(projectSources)
+    .map((filePath) => filenameToProjectId(filenameFromPath(filePath)))
     .sort();
 }
 
@@ -47,27 +46,25 @@ export async function getProjectCaseStudy(
 ): Promise<ProjectCaseStudy | null> {
   if (!validProjectId.test(projectId)) return null;
 
-  try {
-    const files = await readdir(projectDirectory);
-    const filename = files.find(
-      (file) => file.endsWith(".md") && filenameToProjectId(file) === projectId,
-    );
-    if (!filename) return null;
+  const source = Object.entries(projectSources).find(
+    ([filePath]) =>
+      filenameToProjectId(filenameFromPath(filePath)) === projectId,
+  )?.[1];
+  if (!source) return null;
 
-    const source = await readFile(path.join(projectDirectory, filename), "utf8");
-    const parsed = matter(source);
-    const metadata = parseMetadata(parsed.data, projectId);
+  const parsed = matter(source);
+  const metadata = parseMetadata(parsed.data, projectId);
 
-    return {
-      id: projectId,
-      metadata,
-      content: parsed.content.trim(),
-      toc: buildTableOfContents(parsed.content),
-    };
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
-    throw error;
-  }
+  return {
+    id: projectId,
+    metadata,
+    content: parsed.content.trim(),
+    toc: buildTableOfContents(parsed.content),
+  };
+}
+
+function filenameFromPath(filePath: string) {
+  return filePath.slice(filePath.lastIndexOf("/") + 1);
 }
 
 function filenameToProjectId(filename: string) {

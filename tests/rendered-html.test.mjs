@@ -139,6 +139,8 @@ test("markdown project case study system is wired to the homepage", async () => 
   assert.doesNotMatch(detail, /case-hero/);
   assert.doesNotMatch(detail, /case-cover-fallback/);
   assert.match(loader, /gray-matter/);
+  assert.match(loader, /import\.meta\.glob/);
+  assert.doesNotMatch(loader, /node:fs|process\.cwd/);
   assert.match(loader, /buildTableOfContents/);
   assert.match(eatFirst, /title: Eat First/);
   assert.match(chinaGo, /title: ChinaGo/);
