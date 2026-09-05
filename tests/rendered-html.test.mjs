@@ -45,6 +45,7 @@ test("portfolio source contains the requested homepage structure", async () => {
   assert.match(profile, /把 AI 能力转化为可理解、可控制、可持续使用的产品体验。/);
   assert.match(projects, /title: "Eat First"/);
   assert.match(projects, /title: "ChinaGo"/);
+  assert.match(projects, /slug: "by-claw"/);
   assert.match(projects, /ProjectCategory/);
   assert.match(projects, /label: "实习"/);
   assert.match(projects, /label: "个人"/);
@@ -53,7 +54,7 @@ test("portfolio source contains the requested homepage structure", async () => {
   assert.match(projects, /未来优化/);
 });
 
-test("local project source has no hosted site or sign-in configuration", async () => {
+test("project source has Cloudflare support without Sites or sign-in configuration", async () => {
   const viteConfig = await readFile(
     new URL("../vite.config.ts", import.meta.url),
     "utf8",
@@ -63,8 +64,10 @@ test("local project source has no hosted site or sign-in configuration", async (
     "utf8",
   );
 
-  assert.doesNotMatch(viteConfig, /@openai\/sites|hosting\.json|cloudflare/);
-  assert.doesNotMatch(packageJson, /@openai\/sites|wrangler/);
+  assert.doesNotMatch(viteConfig, /@openai\/sites|hosting\.json/);
+  assert.doesNotMatch(packageJson, /@openai\/sites/);
+  assert.match(viteConfig, /@cloudflare\/vite-plugin/);
+  assert.match(packageJson, /deploy:vinext/);
 });
 
 test("cloudflare and d1 scaffolding remains available", async () => {
@@ -123,8 +126,8 @@ test("markdown project case study system is wired to the homepage", async () => 
     new URL("../src/content/projects/ChinaGo.md", import.meta.url),
     "utf8",
   );
-  const rag = await readFile(
-    new URL("../src/content/projects/rag-assistant.md", import.meta.url),
+  const byClaw = await readFile(
+    new URL("../src/content/projects/BYClaw.md", import.meta.url),
     "utf8",
   );
 
@@ -139,5 +142,5 @@ test("markdown project case study system is wired to the homepage", async () => 
   assert.match(loader, /buildTableOfContents/);
   assert.match(eatFirst, /title: Eat First/);
   assert.match(chinaGo, /title: ChinaGo/);
-  assert.match(rag, /title: 企业知识库 RAG 助手/);
+  assert.match(byClaw, /title: 百应Claw AI Agent & skills 生态建设/);
 });
